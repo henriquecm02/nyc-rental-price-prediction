@@ -1,0 +1,206 @@
+{
+  "acertos": 20,
+  "total": 20,
+  "modelos": [
+    {
+      "modelo": "mediana_bairro_tipo",
+      "mae": 50.9,
+      "rmse": 101.08,
+      "erro_pct_mediano": 25.0
+    },
+    {
+      "modelo": "ridge",
+      "mae": 47.52,
+      "rmse": 93.11,
+      "erro_pct_mediano": 25.0
+    },
+    {
+      "modelo": "gbm",
+      "mae": 44.22,
+      "rmse": 87.52,
+      "erro_pct_mediano": 22.2
+    }
+  ],
+  "teste": {
+    "preco_previsto": 243.31,
+    "preco_real": 225.0,
+    "erro_pct": 8.1,
+    "resumo": "Para o anúncio de teste do desafio (Skylit Midtown Castle), o modelo prevê US$ 243.31; o preço real é US$ 225.00, um erro de 8.1%."
+  },
+  "importancia": [
+    {
+      "grupo": "tipo de acomodação",
+      "aumento_mae": 27.58
+    },
+    {
+      "grupo": "localização (lat/long)",
+      "aumento_mae": 16.42
+    },
+    {
+      "grupo": "mínimo de noites",
+      "aumento_mae": 6.55
+    },
+    {
+      "grupo": "disponibilidade no ano",
+      "aumento_mae": 6.46
+    },
+    {
+      "grupo": "palavras do nome",
+      "aumento_mae": 4.13
+    },
+    {
+      "grupo": "reviews",
+      "aumento_mae": 3.51
+    },
+    {
+      "grupo": "bairro",
+      "aumento_mae": 3.34
+    },
+    {
+      "grupo": "anúncios do anfitrião",
+      "aumento_mae": 2.73
+    }
+  ],
+  "casos": [
+    {
+      "caso": "preço mediano de Manhattan",
+      "ok": true,
+      "obtido": 149.0,
+      "esperado": 149.0
+    },
+    {
+      "caso": "quartos privados no Brooklyn",
+      "ok": true,
+      "obtido": 10131,
+      "esperado": 10131
+    },
+    {
+      "caso": "Spearman preço × mínimo de noites",
+      "ok": true,
+      "obtido": 0.103,
+      "esperado": 0.103
+    },
+    {
+      "caso": "filtro remove preço zero e acima de US$ 1.000",
+      "ok": true,
+      "obtido": 250,
+      "esperado": 250
+    },
+    {
+      "caso": "GBM erra menos que a mediana por bairro e tipo",
+      "ok": true,
+      "obtido": 44.22,
+      "esperado": "< 50.9"
+    },
+    {
+      "caso": "GBM erra menos que Ridge",
+      "ok": true,
+      "obtido": 44.22,
+      "esperado": "< 47.52"
+    },
+    {
+      "caso": "anúncio de teste dentro de 20% do preço real",
+      "ok": true,
+      "obtido": 243.31,
+      "esperado": 225.0
+    },
+    {
+      "caso": "ranking de investimento consistente (>= 50 anúncios, receita = preço × noites)",
+      "ok": true,
+      "obtido": 5,
+      "esperado": 5
+    },
+    {
+      "caso": "roteamento: Quanto cobrar por um apartamento inteiro em Williamsburg?",
+      "ok": true,
+      "obtido": [
+        "estimar_preco"
+      ],
+      "esperado": "estimar_preco"
+    },
+    {
+      "caso": "roteamento: Qual o preço previsto para o anúncio Skylit Midtown Castle?",
+      "ok": true,
+      "obtido": [
+        "prever_anuncio_teste"
+      ],
+      "esperado": "prever_anuncio_teste"
+    },
+    {
+      "caso": "roteamento: Onde é melhor comprar um imóvel para alugar?",
+      "ok": true,
+      "obtido": [
+        "sugerir_investimento"
+      ],
+      "esperado": "sugerir_investimento"
+    },
+    {
+      "caso": "roteamento: O mínimo de noites e a disponibilidade interferem no preço?",
+      "ok": true,
+      "obtido": [
+        "efeito_noites_disponibilidade"
+      ],
+      "esperado": "efeito_noites_disponibilidade"
+    },
+    {
+      "caso": "roteamento: Existe padrão no nome dos anúncios mais caros?",
+      "ok": true,
+      "obtido": [
+        "palavras_dos_caros"
+      ],
+      "esperado": "palavras_dos_caros"
+    },
+    {
+      "caso": "roteamento: O que mais pesa no preço?",
+      "ok": true,
+      "obtido": [
+        "explicar_preco"
+      ],
+      "esperado": "explicar_preco"
+    },
+    {
+      "caso": "roteamento: Compare os modelos pelo MAE",
+      "ok": true,
+      "obtido": [
+        "comparar_modelos"
+      ],
+      "esperado": "comparar_modelos"
+    },
+    {
+      "caso": "roteamento: Qual o preço mediano por região?",
+      "ok": true,
+      "obtido": [
+        "estatisticas_bairros"
+      ],
+      "esperado": "estatisticas_bairros"
+    },
+    {
+      "caso": "roteamento: Quartos privados no Brooklyn até 80 dólares",
+      "ok": true,
+      "obtido": [
+        "consultar_anuncios"
+      ],
+      "esperado": "consultar_anuncios"
+    },
+    {
+      "caso": "roteamento: Publique a recomendação de investimento",
+      "ok": true,
+      "obtido": [
+        "publicar_recomendacao"
+      ],
+      "esperado": "publicar_recomendacao"
+    },
+    {
+      "caso": "número inventado é barrado",
+      "ok": true,
+      "obtido": "revisar",
+      "esperado": "revisar"
+    },
+    {
+      "caso": "número correto passa",
+      "ok": true,
+      "obtido": "ok",
+      "esperado": "ok"
+    }
+  ]
+}

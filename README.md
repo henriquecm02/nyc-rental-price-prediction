@@ -1,98 +1,75 @@
-## Configurando o Ambiente para Análise Exploratória de Dados e Predição Para Valores de Aluguéis de Apartamentos em Nova Yorque
+# Agente de precificação · aluguel por temporada em Nova York
 
-Este README fornece instruções para configurar o ambiente no Google Colab e Jupyter Notebook, incluindo como baixar e utilizar o arquivo `teste_indicium_precificacao.cvs` e os requisitos para executar o código de Análise Exploratória de Dados (EDA) e predição.
+Agente de IA que estima a diária de um anúncio, compara bairros, mostra o que pesa no preço e sugere onde comprar um imóvel para alugar. Usa os 48.894 anúncios de Nova York de 2019. A publicação da recomendação só acontece com aprovação humana.
 
-### 1. Pré-requisitos
+O projeto começou como o desafio de precificação do programa Lighthouse (Indicium). A base é uma tradução do conjunto público *New York City Airbnb Open Data* (Inside Airbnb, 2019). O notebook e as respostas originais estão em [`docs/original/`](docs/original/).
 
-* **Conexão com a internet:** Você precisará de uma conexão com a internet para baixar o arquivo `teste_indicium_precificacao.cvs` e instalar as bibliotecas necessárias.
-* **Conta do Google:** Para usar o Google Colab, você precisará de uma conta do Google.
-* **Anaconda ou Miniconda:** Para usar o Jupyter Notebook, você precisará instalar o Anaconda ou Miniconda.
+![Dashboard](docs/img/dash.jpg)
 
-### 2. Baixando o arquivo `dfbruto.csv`
+## Como funciona
+**O modelo interpreta, o código calcula e confere, a pessoa aprova.**
 
-1. **Faça o download do arquivo:** Clique no seguinte link para baixar o arquivo `teste_indicium_precificacao.cvs`: [https://github.com/henriquecm02/LH_CD_HENRIQUE_COUTO_MACHADO./blob/main/teste_indicium_precificacao.csv](https://github.com/henriquecm02/LH_CD_HENRIQUE_COUTO_MACHADO./blob/main/teste_indicium_precificacao.csv)
-   
-2. **Salve o arquivo:** Salve o arquivo baixado  em um local acessível no seu computador.
+1. O Gemini lê a pergunta e escolhe as ferramentas, com saída em JSON Schema.
+2. As consultas são filtros seguros do pandas e o modelo de preço é do scikit-learn. O modelo de linguagem não calcula nada.
+3. O código confere se cada número da resposta saiu de uma ferramenta. Se algum não saiu, a resposta vira **revisar**.
+4. `publicar_recomendacao` é sensível e fica pendente até ser aprovada.
 
-### 3. Google Colab
+Sem `GEMINI_API_KEY`, o agente roda em modo offline, com roteamento por palavras-chave.
 
-**Passo 1:** Acesse o Google Colab: [https://colab.research.google.com/](https://colab.research.google.com/)
+| Ferramenta | O que faz |
+|---|---|
+| `estimar_preco` | Diária estimada com faixa p10–p90, a partir de bairro, tipo, mínimo de noites, disponibilidade, reviews e título |
+| `prever_anuncio_teste` | Preço do anúncio de teste do desafio (*Skylit Midtown Castle*) |
+| `consultar_anuncios` · `estatisticas_bairros` | Filtros e medianas por região ou bairro |
+| `efeito_noites_disponibilidade` | Pergunta do desafio: mínimo de noites e disponibilidade afetam o preço? |
+| `palavras_dos_caros` | Pergunta do desafio: há padrão no nome dos anúncios mais caros? |
+| `explicar_preco` · `comparar_modelos` | Importância por permutação e erro em holdout |
+| `sugerir_investimento` | Pergunta do desafio: onde comprar? Ranking por receita anual estimada |
+| `publicar_recomendacao` | Sensível: exige aprovação |
 
-**Passo 2:** Crie um novo notebook ou abra um existente.
+## Resultados medidos
+Holdout de 20% (9.729 anúncios, semente 42). O modelo aprende o log do preço, e o erro é medido em dólares:
 
-**Passo 3:** Instale as bibliotecas necessárias:
+| Modelo | MAE | RMSE | Erro % mediano |
+|---|---|---|---|
+| mediana do bairro e tipo (linha de base) | US$ 50,90 | US$ 101,08 | 25,0% |
+| Ridge | US$ 47,52 | US$ 93,11 | 25,0% |
+| **GBM (HistGradientBoosting)** | **US$ 44,22** | **US$ 87,52** | **22,2%** |
 
-```python
-!pip install pandas numpy matplotlib seaborn scikit-learn pickle...
-```
+- **Anúncio de teste:** previsão de US$ 243,31; o preço real é US$ 225, um erro de 8,1%.
+- **O que pesa no preço** (aumento do erro médio ao embaralhar): tipo de acomodação +US$ 27,58, localização +US$ 16,42, mínimo de noites +US$ 6,55 e disponibilidade +US$ 6,46.
+- **Mínimo de noites e disponibilidade:** a correlação de Spearman com o preço é 0,103 e 0,083. Os efeitos existem, mas são fracos. A resposta original dizia que a correlação com o mínimo de noites era negativa, e os dados mostram o contrário.
+- **Palavras dos anúncios caros:** "blueground" (uma empresa de apartamentos mobiliados) aparece em 81,2% de anúncios entre os 10% mais caros. Também se destacam "tribeca", "gym", "doorman" e "townhouse". A resposta original citava "Luxury" e "View", que não estão entre as mais associadas.
+- **Onde investir (apartamento inteiro):** pela receita anual estimada, East Elmhurst (Queens, ao lado do aeroporto LaGuardia), Jamaica e Woodside. Pelo preço, Manhattan é a região mais cara, mas a ocupação estimada muda o ranking.
 
-**Passo 4:** Carregue o arquivo `teste_indicium_precificacao.cvs` para o Google Colab:
+A avaliação contra gabarito (`python eval/run_eval.py`) acertou **20 de 20 casos**. As respostas esperadas são calculadas direto da base bruta: mediana de Manhattan, total de quartos privados no Brooklyn, a correlação de Spearman e o filtro de preços. A avaliação também cobre as metas do modelo, a consistência do ranking, 10 perguntas de roteamento e a conferência de números.
 
-```python
-from google.colab import files
-uploaded = files.upload()
-```
+O RMSE de US$ 44 do notebook original não é comparável com este: ele foi medido depois de remover os preços altos, e aqui o teste inclui diárias de até US$ 1.000.
 
-**Passo 5:** Substitua o caminho do arquivo no código com o caminho correto para o seu arquivo no Google Colab:
+## Limites
+- **A ocupação é estimada, não observada.** Ela vem das reviews, com a hipótese do Inside Airbnb de que 50% dos hóspedes avaliam e cada estadia dura 3 noites, limitada a 70% do ano. Bairros com hóspedes que avaliam mais parecem mais rentáveis.
+- Os dados são de 2019, antes da pandemia e das regras de 2023 de Nova York que restringiram aluguéis curtos. Servem para estudo, não para decidir uma compra hoje.
+- O modelo não sabe o tamanho do imóvel, as fotos nem as comodidades, e isso explica boa parte do erro restante.
+- A escolha de ferramentas com o Gemini real ainda não foi medida. Para medir, rode o workflow manual `eval-gemini` com o secret `GEMINI_API_KEY`.
 
-```python
-df = pd.read_csv('teste_indicium_precificacao.cvs', sep=",")
-```
-
-**Passo 6:** Execute o código de EDA e predição.
-
-### 4. Jupyter Notebook
-
-**Passo 1:** Instale o Anaconda ou Miniconda: [https://www.anaconda.com/](https://www.anaconda.com/)
-
-**Passo 2:** Crie um novo ambiente virtual (opcional, mas recomendado):
-
+## Como rodar
 ```bash
-conda create -n eda_env python=3.8
-conda activate eda_env
+pip install -e ".[dev]"
+streamlit run app/streamlit_app.py   # dashboard, estimativa e agente
+python eval/run_eval.py              # avaliação contra gabarito
+pytest -q                            # testes, sem rede
 ```
 
-**Passo 3:** Instale as bibliotecas necessárias:
+![Agente](docs/img/agente.jpg)
 
-```bash
-pip install pandas numpy matplotlib seaborn scikit-learn pickle...
+## Estrutura
 ```
-
-**Passo 4:** Crie um novo notebook Jupyter:
-
-```bash
-jupyter notebook
+data/listings_nyc_2019.csv   base do desafio (48.894 anúncios)
+src/aluguelagent/
+  agentcore.py   cliente Gemini, laço de ferramentas, conferência de números, aprovações
+  core.py        limpeza, modelo de preço, holdout, importância, consultas, palavras
+  tools.py       ferramentas do agente e roteamento offline
+app/streamlit_app.py   Dashboard · Estimar diária · Agente · Avaliação · Aprovações
+eval/run_eval.py       gabarito
+docs/original/         notebook e respostas da versão original
 ```
-
-**Passo 5:** Cole o código de EDA e predição no notebook.
-
-**Passo 6:** Substitua o caminho do arquivo no código com o caminho correto para o seu arquivo no computador:
-
-```python
-df = pd.read_csv('teste_indicium_precificacao.cvs', sep=",")
-```
-
-**Passo 7:** Execute o código.
-
-### 5. Executando o código
-
-* Certifique-se de que você tenha o arquivo `teste_indicium_precificacao.cvs` no Google Drive ou no diretório local do seu computador.
-* Modifique o caminho para o arquivo `teste_indicium_precificacao.cvs` no código para corresponder ao local do seu arquivo.
-* Execute cada célula de código no notebook.
-
-### 6. Requisitos
-
-```
-pandas==1.5.3
-numpy==1.24.2
-seaborn==0.12.2
-matplotlib==3.7.1
-geopandas==0.12.2
-missingno==0.5.2
-wordcloud==1.9.2
-scipy==1.10.1
-scikit-learn==1.2.2
-joblib==1.3.1
-plotly==5.14.1
-```
-

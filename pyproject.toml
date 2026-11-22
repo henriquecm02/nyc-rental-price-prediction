@@ -1,0 +1,25 @@
+[project]
+name = "aluguelagent"
+version = "1.0.0"
+description = "Agente de precificação de aluguel por temporada em Nova York, com dashboard e avaliação contra gabarito."
+requires-python = ">=3.11"
+dependencies = [
+  "pandas>=2.2", "numpy>=1.26", "scikit-learn>=1.5", 
+  "plotly>=5.20", "joblib>=1.3", "streamlit>=1.35", "google-genai>=1.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.5"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 160
+extend-exclude = ["docs"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
