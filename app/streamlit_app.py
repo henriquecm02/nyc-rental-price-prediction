@@ -8,6 +8,7 @@ from pathlib import Path
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+import tema
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -15,7 +16,6 @@ sys.path.insert(0, str(ROOT / "src"))
 from aluguelagent import core as C  # noqa: E402
 from aluguelagent.tools import build_agent, t_estimar, t_investir  # noqa: E402
 
-RED, GREY = "#E3263B", "#9A8A8D"
 st.set_page_config(page_title="Aluguel em NY · agente", page_icon="🗽", layout="wide")
 
 
@@ -31,10 +31,13 @@ agent = get_agent()
 st.session_state.setdefault("pending", [])
 st.session_state.setdefault("log", [])
 
-st.title("Agente de precificação: aluguel por temporada em Nova York")
 n_total = f"{len(C.load()):,}".replace(",", ".")
-st.caption(f"{n_total} anúncios de 2019 (Airbnb). Estima a diária, compara bairros e sugere onde investir. "
-           "Os números vêm do pandas e do scikit-learn; o modelo de linguagem só interpreta.")
+tema.aplicar_tema(
+    "Agente de precificação: aluguel por temporada em Nova York",
+    f"{n_total} anúncios de 2019 (Airbnb). Estima a diária, compara bairros e sugere onde investir. "
+    "Os números vêm do pandas e do scikit-learn; o modelo de linguagem só interpreta.",
+    kicker="Agente de IA · precificação",
+    chips=["Gemini", "Gradient boosting", "Dados reais de 2019"])
 if agent.llm is None:
     st.info("Modo offline: sem GEMINI_API_KEY, o agente escolhe ferramentas por palavras-chave.", icon="🔌")
 
@@ -52,18 +55,18 @@ with tab_dash:
     with c1:
         st.subheader("Mapa de preços")
         amostra = df.sample(6000, random_state=0)
-        fig = px.scatter(amostra, x="longitude", y="latitude", color="price", color_continuous_scale=["#F6D5DA", RED, "#5A0714"],
+        fig = px.scatter(amostra, x="longitude", y="latitude", color="price", color_continuous_scale=tema.sequencial(),
                          range_color=(40, 400), opacity=0.6, hover_name="nome", labels={"price": "US$/noite"})
         fig.update_traces(marker={"size": 4})
         fig.update_layout(height=460, margin={"l": 10, "r": 10, "t": 10, "b": 10}, xaxis_visible=False, yaxis_visible=False)
         fig.update_yaxes(scaleanchor="x", scaleratio=1.32)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(tema.estilo_plotly(fig), use_container_width=True)
     with c2:
         st.subheader("Diária por região e tipo")
         fig2 = px.box(df, x="bairro_group", y="price", color="room_type", points=False, log_y=True,
-                      color_discrete_sequence=[RED, GREY, "#3B82C4"], labels={"price": "US$/noite (log)", "bairro_group": ""})
+                      color_discrete_sequence=tema.cores(3), labels={"price": "US$/noite (log)", "bairro_group": ""})
         fig2.update_layout(height=460, margin={"l": 10, "r": 10, "t": 10, "b": 10}, legend={"orientation": "h", "y": -0.15, "title": ""})
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(tema.estilo_plotly(fig2), use_container_width=True)
     c3, c4 = st.columns(2)
     with c3:
         st.subheader("Onde investir (apartamento inteiro)")
@@ -73,10 +76,10 @@ with tab_dash:
     with c4:
         st.subheader("O que pesa no preço")
         imp = pd.DataFrame(C.importance()).sort_values("aumento_mae")
-        fig3 = px.bar(imp, x="aumento_mae", y="grupo", orientation="h", color_discrete_sequence=[RED],
+        fig3 = px.bar(imp, x="aumento_mae", y="grupo", orientation="h", color_discrete_sequence=[tema.cor(0)],
                       labels={"aumento_mae": "aumento do erro médio (US$) ao embaralhar", "grupo": ""})
         fig3.update_layout(height=320, margin={"l": 10, "r": 10, "t": 10, "b": 10})
-        st.plotly_chart(fig3, use_container_width=True)
+        st.plotly_chart(tema.estilo_plotly(fig3), use_container_width=True)
 
 with tab_preco:
     a, b, c = st.columns(3)
@@ -91,7 +94,8 @@ with tab_preco:
 
 with tab_agent:
     ex = st.selectbox("Exemplos", ["", "Quanto cobrar por um apartamento inteiro em Williamsburg?", "Onde é melhor comprar um imóvel para alugar?",
-                                   "O mínimo de noites e a disponibilidade interferem no preço?", "Existe padrão no nome dos anúncios mais caros?"])
+                                   "O mínimo de noites e a disponibilidade interferem no preço?", "Existe padrão no nome dos anúncios mais caros?"],
+                      placeholder="Escolha um exemplo")
     q = st.text_input("Pergunta", value=ex)
     if st.button("Perguntar", type="primary") and q.strip():
         r = agent.run(q)
